@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agave Flavor Wheel</title>
+  <style>
+    :root {
+      --bg: #f7f3ee;
+      --text: #2b1f14;
+      --muted: #8b6f47;
+      --highlight: #c85a3a;
+      --accent: #d4834d;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #fef9f3, #f0e4d6);
+      font-family: var(--font);
+      color: var(--text);
+    }
+    .wrapper {
+      max-width: 900px;
+      width: 100%;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px 24px 32px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+    }
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .title {
+      font-size: 1.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+      font-weight: 400;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .tooltip {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.95rem;
+      color: var(--text);
+      min-height: 1.2em;
+    }
+    .tooltip span.path {
+      font-weight: 600;
+      color: var(--highlight);
+    }
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .label-center {
+      font-size: 0.8rem;
+      fill: var(--muted);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .label-center.title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      fill: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="header">
+        <div class="title">Agave Flavor Wheel</div>
+        <div class="subtitle">Hover to explore categories and notes</div>
+      </div>
+      <svg id="flavor-wheel" viewBox="-225 -225 450 450" aria-label="Agave flavor wheel"></svg>
+      <div class="tooltip" id="tooltip">
+        Hover on a segment to see the flavor path.
+      </div>
+    </div>
+  </div>
+  <!-- D3.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    // ========= 1. Data: Edit this to customize your wheel =========
+    const data = {
+      name: "Agave",
+      children: [
+        {
+          name: "Fruity",
+          children: [
+            {
+              name: "Citrus",
+              children: [
+                { name: "Lime" },
+                { name: "Grapefruit" },
+                { name: "Orange Zest" }
+              ]
+            },
+            {
+              name: "Tropical",
+              children: [
+                { name: "Pineapple" },
+                { name: "Mango" },
+                { name: "Banana" }
+              ]
+            },
+            {
+              name: "Stone Fruit",
+              children: [
+                { name: "Peach" },
+                { name: "Apricot" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "Herbal",
+          children: [
+            {
+              name: "Green",
+              children: [
+                { name: "Raw Agave" },
+                { name: "Fresh Cut Grass" },
+                { name: "Cactus" }
+              ]
+            },
+            {
+              name: "Dried",
+              children: [
+                { name: "Dried Herbs" },
+                { name: "Oregano" },
+                { name: "Bay Leaf" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "Spice",
+          children: [
+            {
+              name: "Baking",
+              children: [
+                { name: "Cinnamon" },
+                { name: "Clove" },
+                { name: "Nutmeg" }
+              ]
+            },
+            {
+              name: "Peppery",
+              children: [
+                { name: "Black Pepper" },
+                { name: "White Pepper" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "Sweet",
+          children: [
+            {
+              name: "Caramelized",
+              children: [
+                { name: "Caramel" },
+                { name: "Toffee" },
+                { name: "Cooked Agave" }
+              ]
+            },
+            {
+              name: "Candy",
+              children: [
+                { name: "Vanilla" },
+                { name: "Honey" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "Earthy",
+          children: [
+            {
+              name: "Mineral",
+              children: [
+                { name: "Wet Stone" },
+                { name: "Chalk" }
+              ]
+            },
+            {
+              name: "Soil",
+              children: [
+                { name: "Wet Soil" },
+                { name: "Clay" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "Woody/\nRoasted",
+          children: [
+            {
+              name: "Oak",
+              children: [
+                { name: "Vanilla Oak" },
+                { name: "Toast" },
+                { name: "Char" }
+              ]
+            },
+            {
+              name: "Smoke",
+              children: [
+                { name: "Light Smoke" },
+                { name: "Mesquite" }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+    // ========= 2. Setup SVG & layout =========
+    const svg = d3.select("#flavor-wheel");
+    const radius = 200;
+    const root = d3
+      .hierarchy(data)
+      .sum(d => (d.children ? 0 : 1))
+      .sort((a, b) => d3.ascending(a.data.name, b.data.name));
+    const partition = d3.partition().size([2 * Math.PI, radius]);
+    partition(root);
+    const arc = d3
+      .arc()
+      .startAngle(d => d.x0)
+      .endAngle(d => d.x1)
+      .padAngle(0.005)
+      .padRadius(radius / 3)
+      .innerRadius(d => d.y0)
+      .outerRadius(d => d.y1 - 1);
+    const color = d3
+      .scaleOrdinal()
+      .domain(root.children.map(d => d.data.name))
+      .range([
+        "#d4834d",  // warm orange (from Casa México site)
+        "#c85a3a",  // terracotta red
+        "#b96d5c",  // dusty rose
+        "#8b7355",  // warm brown
+        "#9a8268",  // taupe
+        "#a67c52"   // golden tan
+      ]);
+    const tooltipEl = document.getElementById("tooltip");
+    // ========= 3. Draw arcs =========
+    const nodes = svg
+      .append("g")
+      .selectAll("path")
+      .data(root.descendants().filter(d => d.depth > 0))
+      .join("path")
+      .attr("fill", d => {
+        // Top-level categories: direct color
+        if (d.depth === 1) return color(d.data.name);
+        // Deeper: slightly lighten based on depth
+        const parentColor = d3.color(color(d.ancestors()[1].data.name));
+        parentColor.opacity = d.depth === 2 ? 0.85 : 0.7;
+        return parentColor;
+      })
+      .attr("d", arc)
+      .style("cursor", d => (d.depth > 0 ? "pointer" : "default"))
+      .on("mouseover", (event, d) => {
+        nodes.attr("opacity", node =>
+          node === d || d.ancestors().includes(node) ? 1 : 0.25
+        );
+        const path = d
+          .ancestors()
+          .reverse()
+          .map(n => n.data.name.replace('\n', ' '))
+          .join(" → ");
+        tooltipEl.innerHTML = `Flavor path: <span class="path">${path}</span>`;
+      })
+      .on("mouseout", () => {
+        nodes.attr("opacity", 1);
+        tooltipEl.textContent = "Hover on a segment to see the flavor path.";
+      });
+    // ========= 4. Center labels =========
+    svg
+      .append("text")
+      .attr("class", "label-center title")
+      .attr("y", -6)
+      .text("AGAVE")
+      .style("font-size", "1rem")
+      .style("letter-spacing", "0.12em")
+      .style("fill", "#2b1f14");
+    svg
+      .append("text")
+      .attr("class", "label-center")
+      .attr("y", 12)
+      .text("Flavor Wheel")
+      .style("font-size", "0.7rem")
+      .style("fill", "#8b6f47");
+    // ========= 5. Add curved text labels that fit within segments =========
+    const labelGroup = svg.append("g");
+
+    // Helper function to create multi-line text
+    function createTextLabel(group, d, r, rotate, flip, fontSize, fontWeight, fill, textShadow) {
+      const lines = d.data.name.split('\n');
+      const isLong = d.data.name.replace('\n', '').length > 10;
+      const actualFontSize = isLong ? fontSize * 0.85 : fontSize;
+      
+      const text = group
+        .append("text")
+        .attr("transform", `rotate(${rotate}) translate(${r},0) rotate(${flip ? 180 : 0})`)
+        .attr("text-anchor", "middle")
+        .style("font-size", `${actualFontSize}rem`)
+        .style("font-weight", fontWeight)
+        .style("fill", fill)
+        .style("pointer-events", "none");
+      
+      if (textShadow) {
+        text.style("text-shadow", textShadow);
+      }
+      
+      if (lines.length > 1) {
+        // Multi-line text
+        const lineHeight = actualFontSize * 16 * 1.1; // Convert rem to pixels
+        const totalHeight = lineHeight * lines.length;
+        const startY = -totalHeight / 2 + lineHeight / 2;
+        
+        lines.forEach((line, i) => {
+          text.append("tspan")
+            .attr("x", 0)
+            .attr("dy", i === 0 ? `${startY}px` : `${lineHeight}px`)
+            .text(line);
+        });
+      } else {
+        // Single line
+        text.attr("dy", "0.35em").text(lines[0]);
+      }
+      
+      return text;
+    }
+
+    // Top-level category labels (inner ring)
+    root.children.forEach(d => {
+      const angle = (d.x0 + d.x1) / 2;
+      const rotate = (angle * 180 / Math.PI - 90);
+      const flip = rotate > 90 && rotate < 270;
+      const r = (d.y0 + d.y1) / 2;
+      
+      createTextLabel(
+        labelGroup, d, r, rotate, flip,
+        0.58, "700", "#fff", "0 1px 2px rgba(0,0,0,0.4)"
+      ).text(null); // Clear default text
+      
+      const lines = d.data.name.toUpperCase().split('\n');
+      const text = labelGroup.select("text:last-child");
+      
+      if (lines.length > 1) {
+        const lineHeight = 0.58 * 16 * 1.1;
+        const totalHeight = lineHeight * lines.length;
+        const startY = -totalHeight / 2 + lineHeight / 2;
+        
+        lines.forEach((line, i) => {
+          text.append("tspan")
+            .attr("x", 0)
+            .attr("dy", i === 0 ? `${startY}px` : `${lineHeight}px`)
+            .style("letter-spacing", "0.06em")
+            .text(line);
+        });
+      } else {
+        text.attr("dy", "0.35em")
+          .style("letter-spacing", "0.06em")
+          .text(lines[0]);
+      }
+    });
+
+    // Middle ring labels (subcategories)
+    root.descendants().filter(d => d.depth === 2).forEach(d => {
+      const angle = (d.x0 + d.x1) / 2;
+      const rotate = (angle * 180 / Math.PI - 90);
+      const flip = rotate > 90 && rotate < 270;
+      const isLong = d.data.name.length > 10;
+      
+      labelGroup
+        .append("text")
+        .attr("transform", () => {
+          const r = (d.y0 + d.y1) / 2;
+          return `rotate(${rotate}) translate(${r},0) rotate(${flip ? 180 : 0})`;
+        })
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .text(d.data.name)
+        .style("font-size", isLong ? "0.4rem" : "0.48rem")
+        .style("font-weight", "600")
+        .style("fill", "#2b1f14")
+        .style("pointer-events", "none");
+    });
+
+    // Outer ring labels (specific flavors)
+    root.descendants().filter(d => d.depth === 3).forEach(d => {
+      const angle = (d.x0 + d.x1) / 2;
+      const rotate = (angle * 180 / Math.PI - 90);
+      const flip = rotate > 90 && rotate < 270;
+      const isLong = d.data.name.length > 10;
+      
+      labelGroup
+        .append("text")
+        .attr("transform", () => {
+          const r = (d.y0 + d.y1) / 2;
+          return `rotate(${rotate}) translate(${r},0) rotate(${flip ? 180 : 0})`;
+        })
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .text(d.data.name)
+        .style("font-size", isLong ? "0.36rem" : "0.4rem")
+        .style("fill", "#2b1f14")
+        .style("pointer-events", "none");
+    });
+  </script>
+</body>
+</html>
